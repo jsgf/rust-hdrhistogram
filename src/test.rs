@@ -37,9 +37,9 @@ fn load_histograms() -> Loaded {
     Loaded { raw: raw, cor: cor, scaled_raw: scaled_raw, scaled_cor: scaled_cor }
 }
 
-fn compare_double(a: f64, b: f64, delta: f64) -> bool { (a - b).abs() < delta }
-fn compare_values(a: f64, b: f64, variation: f64) -> bool { compare_double(a, b, b * variation) }
-fn compare_percentile(a: u64, b: f64, variation: f64) -> bool {
+pub fn compare_double(a: f64, b: f64, delta: f64) -> bool { (a - b).abs() < delta }
+pub fn compare_values(a: f64, b: f64, variation: f64) -> bool { compare_double(a, b, b * variation) }
+pub fn compare_percentile(a: u64, b: f64, variation: f64) -> bool {
     compare_values(a as f64, b, variation)
 }    
 

@@ -16,6 +16,5 @@ the API, and it all passes.
 TODO:
  * Finish basic API
  * Complete iterator items
- * Double API
  * Histogram logging/serialization
  * anything missing

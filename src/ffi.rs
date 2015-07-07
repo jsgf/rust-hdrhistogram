@@ -6,11 +6,11 @@ use std::ptr;
 
 #[repr(C)]
 #[derive(Debug)]
-struct hdr_histogram {
+pub struct hdr_histogram {
     lowest_trackable_value: int64_t,
     highest_trackable_value: int64_t,
     unit_magnitude: int32_t,
-    significant_figures: int64_t,
+    pub significant_figures: int64_t,
     sub_bucket_half_count_magnitude: int32_t,
     sub_bucket_half_count: int32_t,
     sub_bucket_mask: int64_t,
@@ -21,7 +21,7 @@ struct hdr_histogram {
     normalizing_index_offset: int32_t,
     conversion_ratio: c_double,
     counts_len: int32_t,
-    total_count: int64_t,
+    pub total_count: int64_t,
     counts: [int64_t; 0],
 }
 
