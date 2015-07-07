@@ -20,7 +20,7 @@ pub struct hdr_histogram {
     max_value: int64_t,
     normalizing_index_offset: int32_t,
     conversion_ratio: c_double,
-    counts_len: int32_t,
+    pub counts_len: int32_t,
     pub total_count: int64_t,
     counts: [int64_t; 0],
 }

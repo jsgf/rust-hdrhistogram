@@ -1,6 +1,7 @@
 extern crate libc;
-use self::libc::{int64_t, int32_t, c_double, c_int, c_void, free};
+use self::libc::{int64_t, int32_t, c_double, c_int, c_void, size_t, free};
 use std::ptr;
+use std::mem;
 use ffi::{hdr_histogram, HistoErr};
 
 #[repr(C)]
@@ -122,5 +123,20 @@ impl Drop for F64Histogram {
         if !self.histo.is_null() {
             unsafe { libc::free(self.histo as *mut c_void) }
         }
+    }
+}
+
+impl Clone for F64Histogram {
+    fn clone(&self) -> F64Histogram {
+        let sz = mem::size_of::<hdr_dbl_histogram>() + mem::size_of::<int64_t>() * unsafe { (*self.histo).values.counts_len as usize };
+        let p = unsafe { libc::malloc(sz as size_t) as *mut hdr_dbl_histogram };
+
+        if p.is_null() {
+            panic!("Out of memory in F64Histogram::Clone");
+        }
+
+        unsafe { ptr::copy(self.histo, p, sz) };
+
+        F64Histogram { histo: p }
     }
 }
