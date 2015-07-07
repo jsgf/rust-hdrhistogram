@@ -174,8 +174,14 @@ pub struct Histogram {
     histo: *mut hdr_histogram,
 }
 
-/// Instance of a Histogram
+/// Instance of a Histogram.
 impl Histogram {
+    /// Create a new Histogram instance. `lowest_trackable_value`..`highest_trackable_value` defines
+    /// the range of values in the `Histogram`. `lowest_trackable_value` must be >= 1.
+    /// `significant_figures` defines the precision, and must be in the range 1..5.
+    ///
+    /// `HistoErr` is the catch-all failure case. It doesn't report much detail because the
+    /// underlying library doesn't.
     pub fn init(lowest_trackable_value: u64, highest_trackable_value: u64, significant_figures: u32) -> Result<Histogram, HistoErr> {
         let mut histo : *mut hdr_histogram = ptr::null_mut();
         let r = unsafe {
