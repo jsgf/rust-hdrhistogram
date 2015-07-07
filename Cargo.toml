@@ -1,12 +1,12 @@
 [package]
 name = "hdrhistogram"
-version = "0.1.1"
+version = "0.1.2"
 readme = "README.md"
 authors = ["Jeremy Fitzhardinge <jeremy@goop.org>"]
 description = "Binding to HdrHistogram_c library"
 repository = "https://github.com/jsgf/rust-hdrhistogram"
 keywords = [ "ffi", "binding", "hdrhistogram", "histogram" ]
-license = "CC0-1.0/"
+license = "MIT"
 #links = "hdr_histogram"
 #build = "build.rs"
 
