@@ -243,3 +243,18 @@ fn test_median_equivalent_value() {
     assert!(compare_double(8002.0, h.median_equivalent_value(8000.0), 0.001));
     assert!(compare_double(10004.0, h.median_equivalent_value(10007.0), 0.001));
 }
+
+#[test]
+fn test_clone() {
+   let mut h = F64Histogram::init(TRACKABLE_VALUE_RANGE_SIZE, SIGNIFICANT_FIGURES).unwrap();
+
+    assert!(h.record_value(1.0));
+
+    assert_eq!(h.total_count(), 1);
+    assert_eq!(h.count_at_value(1.0), 1);
+
+    let b = h.clone();
+
+    assert_eq!(h.total_count(), b.total_count());
+    assert_eq!(h.count_at_value(1.0), b.count_at_value(1.0));
+}

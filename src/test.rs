@@ -248,3 +248,19 @@ fn test_create_with_large_values() {
     assert!(h.values_are_equivalent(100000000, h.value_at_percentile(83.34)));
     assert!(h.values_are_equivalent(100000000, h.value_at_percentile(99.0)));
 }
+
+#[test]
+fn test_clone() {
+    let mut h = Histogram::init(20000000, 100000000, 5).unwrap();
+
+    h.record_value(100000000);
+    h.record_value(20000000);
+    h.record_value(30000000);
+
+    assert_eq!(h.total_count(), 3);
+
+    let b = h.clone();
+
+    assert_eq!(h.total_count(), b.total_count());
+    assert_eq!(h.count_at_value(100000000), b.count_at_value(100000000));
+}

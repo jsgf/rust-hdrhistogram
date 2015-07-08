@@ -343,7 +343,7 @@ impl Clone for Histogram {
 
         if p.is_null() { panic!("allocation of hdr_histogram failed"); }
 
-        unsafe { ptr::copy(self.histo, p, sz) };
+        unsafe { ptr::copy(self.histo as *const u8, p as *mut u8, sz) };
 
         Histogram { histo: p }
     }

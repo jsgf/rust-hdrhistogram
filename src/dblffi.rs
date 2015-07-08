@@ -135,7 +135,7 @@ impl Clone for F64Histogram {
             panic!("Out of memory in F64Histogram::Clone");
         }
 
-        unsafe { ptr::copy(self.histo, p, sz) };
+        unsafe { ptr::copy(self.histo as *const u8, p as *mut u8, sz) };
 
         F64Histogram { histo: p }
     }
