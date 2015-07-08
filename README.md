@@ -1,4 +1,5 @@
-Rust binding to HdrHistogram_c library.
+Rust binding to HdrHistogram_c library
+======================================
 
 This is a thin binding to the HdrHistogram_c library
 (https://github.com/HdrHistogram/HdrHistogram_c). Aside from the
@@ -18,3 +19,15 @@ TODO:
  * Complete iterator items
  * Histogram logging/serialization
  * anything missing
+
+Use
+---
+
+This is on crates.io, so using it is just a matter of adding this to your Cargo.toml:
+
+```
+[dependencies]
+hdrhistogram = "*"
+```
+
+Jeremy Fitzhardinge <jeremy@goop.org>
