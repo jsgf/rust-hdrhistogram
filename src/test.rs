@@ -264,3 +264,21 @@ fn test_clone() {
     assert_eq!(h.total_count(), b.total_count());
     assert_eq!(h.count_at_value(100000000), b.count_at_value(100000000));
 }
+
+#[test]
+fn test_codec() {
+    let Loaded { raw, .. } = load_histograms();
+
+    let enc = raw.encode().unwrap();
+
+    println!("enc={}", enc);
+
+    let dec = Histogram::decode(&enc).unwrap();
+
+    assert_eq!(raw.total_count(), dec.total_count());
+}
+
+#[test]
+fn test_bad_decode() {
+    assert!(Histogram::decode(&"hello, world".to_string()).is_err())
+}
