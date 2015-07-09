@@ -174,7 +174,9 @@ impl HistogramBucketCfg {
     }
 }
 
-#[derive(Debug)]
+/// Catch-all error return.
+#[derive(Copy,Clone,Debug)]
+/// Catch-all error return.
 pub struct HistoErr;
 
 pub struct Histogram {
@@ -189,6 +191,13 @@ impl Histogram {
     ///
     /// `HistoErr` is the catch-all failure case. It doesn't report much detail because the
     /// underlying library doesn't.
+    ///
+    /// # Example
+    /// ```
+    /// # use hdrhistogram::Histogram;
+    /// let mut h = Histogram::init(1, 100000, 2).unwrap();
+    /// h.record_value(10);  // record a single count of '10'
+    /// ```
     pub fn init(lowest_trackable_value: u64, highest_trackable_value: u64, significant_figures: u32) -> Result<Histogram, HistoErr> {
         let mut histo : *mut hdr_histogram = ptr::null_mut();
         let r = unsafe {
@@ -206,21 +215,26 @@ impl Histogram {
     /// Zero all histogram state in place.
     pub fn reset(&mut self) { unsafe { hdr_reset(self.histo) } }
 
-    /// Return allocation size.
-    pub fn get_memory_size(&self) -> usize { unsafe { hdr_get_memory_size(self.histo) as usize } }
-
-    /// Return number of counters.
-    pub fn get_counts_len(&self) -> u32 { unsafe { (*self.histo).counts_len as u32 } }
-
-    /// Total of all counters
-    pub fn total_count(&self) -> u64 { unsafe { (*self.histo).total_count as u64 } }
-
     /// Record a specific value. Returns true if successful.
+    ///
+    /// ```
+    /// # use hdrhistogram::Histogram;
+    /// # let mut h = Histogram::init(1, 10, 1).unwrap();
+    /// h.record_value(5);
+    /// assert_eq!(h.total_count(), 1);
+    /// ```
     pub fn record_value(&mut self, value: u64) -> bool {
         unsafe { hdr_record_value(self.histo, value as int64_t) }
     }
 
     /// Record multiple counts of a specific value. Returns true if successful.
+    ///
+    /// ```
+    /// # use hdrhistogram::Histogram;
+    /// # let mut h = Histogram::init(1, 10, 1).unwrap();
+    /// h.record_values(5, 10);
+    /// assert_eq!(h.total_count(), 10);
+    /// ```
     pub fn record_values(&mut self, value: u64, count: u64) -> bool {
         unsafe { hdr_record_values(self.histo, value as int64_t, count as int64_t) }
     }
@@ -253,17 +267,44 @@ impl Histogram {
         }
     }
 
+    /// Total of all counters
+    pub fn total_count(&self) -> u64 { unsafe { (*self.histo).total_count as u64 } }
+
     /// Smallest recorded value.
+    ///
+    /// ```
+    /// # use hdrhistogram::Histogram;
+    /// # let mut h = Histogram::init(1, 10, 1).unwrap();
+    /// h.record_value(1);
+    /// h.record_value(5);
+    /// assert_eq!(h.min(), 1);
+    /// ```
     pub fn min(&self) -> u64 {
         unsafe { hdr_min(self.histo) as u64 }
     }
 
     /// Largest recorded value.
+    ///
+    /// ```
+    /// # use hdrhistogram::Histogram;
+    /// # let mut h = Histogram::init(1, 10, 1).unwrap();
+    /// h.record_value(1);
+    /// h.record_value(5);
+    /// assert_eq!(h.max(), 5);
+    /// ```
     pub fn max(&self) -> u64 {
         unsafe { hdr_max(self.histo) as u64 }
     }
 
     /// Value at a particular percentile (0-100).
+    ///
+    /// ```
+    /// # use hdrhistogram::Histogram;
+    /// # let mut h = Histogram::init(1, 100, 2).unwrap();
+    /// h.record_values(20, 10);
+    /// h.record_value(40);
+    /// assert_eq!(h.value_at_percentile(50.0), 20);
+    /// assert_eq!(h.value_at_percentile(99.0), 40);
     pub fn value_at_percentile(&self, percentile: f64) -> u64 {
         unsafe { hdr_value_at_percentile(self.histo, percentile) as u64 }
     }
@@ -307,6 +348,16 @@ impl Histogram {
     }
 
     /// Linear iterator over values. Results are returned in equally weighted buckets.
+    ///
+    /// ```
+    /// # use hdrhistogram::Histogram;
+    /// let mut h = Histogram::init(1, 100000, 3).unwrap();
+    /// for i in 1..100 { h.record_values(i, i); }
+    /// for (i, c) in h.linear_iter(1).enumerate() {    // 100 buckets
+    ///     # assert_eq!(i+1, c.count_added_in_this_iteration_step as usize);
+    ///     println!("bucket {} = {}", i, c.count_added_in_this_iteration_step);
+    /// }
+    /// ```
     pub fn linear_iter<'a>(&'a self, value_units_per_bucket: u64) -> LinearIter<'a> {
         let mut ret = LinearIter { iter: Default::default(), histo: PhantomData };
         unsafe { hdr_iter_linear_init(&mut ret.iter, self.histo, value_units_per_bucket as int64_t) };
@@ -332,7 +383,7 @@ impl Histogram {
         let mut ret = PercentileIter { iter: Default::default(), histo: PhantomData };
         unsafe { hdr_iter_percentile_init(&mut ret.iter, self.histo, ticks_per_half_distance as int32_t) };
         ret
-    }        
+    }
 
     /// Encode `Histogram` state into a Base64 encoded string.
     pub fn encode(&self) -> Result<String, HistoErr> {
@@ -368,6 +419,12 @@ impl Histogram {
             Ok(Histogram { histo: h })
         }
     }
+
+    /// Return allocation size.
+    pub fn get_memory_size(&self) -> usize { unsafe { hdr_get_memory_size(self.histo) as usize } }
+
+    /// Return number of counters.
+    pub fn get_counts_len(&self) -> u32 { unsafe { (*self.histo).counts_len as u32 } }
 }
 
 impl Drop for Histogram {
@@ -390,7 +447,6 @@ impl Clone for Histogram {
         Histogram { histo: p }
     }
 }
-            
 
 #[derive(PartialEq,Eq,PartialOrd,Ord,Clone,Copy,Debug)]
 pub struct CountIterItem {
