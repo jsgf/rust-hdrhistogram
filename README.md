@@ -30,4 +30,6 @@ This is on crates.io, so using it is just a matter of adding this to your Cargo.
 hdrhistogram = "*"
 ```
 
+The API is not at all stable right now.
+
 Jeremy Fitzhardinge <jeremy@goop.org>
