@@ -17,7 +17,7 @@
 //! 
 //! h.record_value(1);
 //! h.record_value(10);
-//! h.record_value(100, 40);
+//! h.record_values(100, 40);
 //!
 //! assert_eq!(h.total_count(), 42);
 //! assert_eq!(h.min(), 1);
