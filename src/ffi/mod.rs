@@ -1,8 +1,14 @@
 extern crate libc;
+
 use self::libc::{int64_t, int32_t, c_double, c_int, c_void, c_char, size_t, free};
 use std::marker::PhantomData;
 use std::mem;
 use std::ptr;
+
+pub mod dbl;
+
+#[cfg(test)]
+pub mod test;
 
 #[repr(C)]
 #[derive(Debug)]
@@ -421,10 +427,11 @@ impl Histogram {
     }
 
     /// Return allocation size.
-    pub fn get_memory_size(&self) -> usize { unsafe { hdr_get_memory_size(self.histo) as usize } }
+    fn get_memory_size(&self) -> usize { unsafe { hdr_get_memory_size(self.histo) as usize } }
 
     /// Return number of counters.
-    pub fn get_counts_len(&self) -> u32 { unsafe { (*self.histo).counts_len as u32 } }
+    #[cfg(test)]
+    fn get_counts_len(&self) -> u32 { unsafe { (*self.histo).counts_len as u32 } }
 }
 
 impl Drop for Histogram {
@@ -450,12 +457,46 @@ impl Clone for Histogram {
 
 #[derive(PartialEq,Eq,PartialOrd,Ord,Clone,Copy,Debug)]
 pub struct CountIterItem {
+    /// The count of recorded values in the histogram that were added to the `total_count_to_this_value`
+    /// (below) as a result on this iteration step. Since multiple iteration steps may occur with
+    /// overlapping equivalent value ranges, the count may be lower than the count found at the
+    /// value (e.g. multiple linear steps or percentile levels can occur within a single equivalent
+    /// value range)
     pub count_added_in_this_iteration_step: u64,
+
+    /// The sum of all recorded values in the histogram at values equal or smaller than `value_from_index`.
+    pub count_to_index: u64,
+
+    /// The actual value level that was iterated to by the iterator
+    pub value_from_index: u64,
+
+    /// Highest value equivalent to `value_from_index`.
+    pub highest_equivalent_value: u64,
+    
+    /// The count of recorded values in the histogram that exactly match this
+    /// `lowest_equivalent_value(value_from_index)`..`highest_equivalent_value(value_from_index)`
+    /// value range.
+    pub count_at_index: u64,
 }
 
 #[derive(PartialEq,PartialOrd,Clone,Copy,Debug)]
 pub struct PercentileIterItem {
+    /// The percentile of recorded values in the histogram at values equal or smaller than `value_from_index`.
     pub percentile: f64,
+
+    /// The sum of all recorded values in the histogram at values equal or smaller than `value_from_index`.
+    pub count_to_index: u64,
+
+    /// The actual value level that was iterated to by the iterator
+    pub value_from_index: u64,
+
+    /// Highest value equivalent to `value_from_index`.
+    pub highest_equivalent_value: u64,
+    
+    /// The count of recorded values in the histogram that exactly match this
+    /// `lowest_equivalent_value(value_from_index)`..`highest_equivalent_value(value_from_index)`
+    /// value range.
+    pub count_at_index: u64,
 }
 
 pub struct LinearIter<'a> {
@@ -470,7 +511,11 @@ impl<'a> Iterator for LinearIter<'a> {
         if unsafe { hdr_iter_next(&mut self.iter) } {
             let lin : &hdr_iter_linear = unsafe { mem::transmute(&self.iter.union) };
             
-            Some(CountIterItem { count_added_in_this_iteration_step: lin.count_added_in_this_iteration_step as u64 })
+            Some(CountIterItem { count_added_in_this_iteration_step: lin.count_added_in_this_iteration_step as u64,
+                                 value_from_index: self.iter.value_from_index as u64,
+                                 highest_equivalent_value: self.iter.highest_equivalent_value as u64,
+                                 count_to_index: self.iter.count_to_index as u64,
+                                 count_at_index: self.iter.count_at_index as u64 })
         } else {
             None
         }
@@ -489,7 +534,11 @@ impl<'a> Iterator for LogIter<'a> {
         if unsafe { hdr_iter_next(&mut self.iter) } {
             let log : &hdr_iter_log = unsafe { mem::transmute(&self.iter.union) };
             
-            Some(CountIterItem { count_added_in_this_iteration_step: log.count_added_in_this_iteration_step as u64 })
+            Some(CountIterItem { count_added_in_this_iteration_step: log.count_added_in_this_iteration_step as u64,
+                                 value_from_index: self.iter.value_from_index as u64,
+                                 highest_equivalent_value: self.iter.highest_equivalent_value as u64,
+                                 count_to_index: self.iter.count_to_index as u64,
+                                 count_at_index: self.iter.count_at_index as u64 })
         } else {
             None
         }
@@ -508,7 +557,11 @@ impl<'a> Iterator for RecordedIter<'a> {
         if unsafe { hdr_iter_next(&mut self.iter) } {
             let rec : &hdr_iter_recorded = unsafe { mem::transmute(&self.iter.union) };
             
-            Some(CountIterItem { count_added_in_this_iteration_step: rec.count_added_in_this_iteration_step as u64 })
+            Some(CountIterItem { count_added_in_this_iteration_step: rec.count_added_in_this_iteration_step as u64,
+                                 value_from_index: self.iter.value_from_index as u64,
+                                 highest_equivalent_value: self.iter.highest_equivalent_value as u64,
+                                 count_to_index: self.iter.count_to_index as u64,
+                                 count_at_index: self.iter.count_at_index as u64 })
         } else {
             None
         }
@@ -527,7 +580,11 @@ impl<'a> Iterator for PercentileIter<'a> {
         if unsafe { hdr_iter_next(&mut self.iter) } {
             let perc : &hdr_iter_percentiles = unsafe { mem::transmute(&self.iter.union) };
             
-            Some(PercentileIterItem { percentile: perc.percentile })
+            Some(PercentileIterItem { percentile: perc.percentile,
+                                      value_from_index: self.iter.value_from_index as u64,
+                                      highest_equivalent_value: self.iter.highest_equivalent_value as u64,
+                                      count_to_index: self.iter.count_to_index as u64,
+                                      count_at_index: self.iter.count_at_index as u64 })
         } else {
             None
         }

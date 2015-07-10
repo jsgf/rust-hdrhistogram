@@ -1,5 +1,5 @@
-use dblffi::F64Histogram;
-use test::compare_double;
+use super::F64Histogram;
+use ffi::test::compare_double;
 
 const TRACKABLE_VALUE_RANGE_SIZE : i64 = 3600 * 1000 * 1000; // e.g. for 1 hr in usec units
 const SIGNIFICANT_FIGURES : u32 = 3;

@@ -4,6 +4,9 @@ use std::ptr;
 use std::mem;
 use ffi::{hdr_histogram, HistoErr};
 
+#[cfg(test)]
+mod test;
+
 #[repr(C)]
 struct hdr_dbl_histogram {
     current_lowest_value: c_double,
@@ -115,6 +118,8 @@ impl F64Histogram {
         unsafe { hdr_dbl_add(self.histo, other.histo) as u64 }
     }
 
+
+    
     //pub fn add_while_correcting_for_coordinated_omission(...)
 }
 
