@@ -26,7 +26,7 @@
 
 mod ffi;
 
-pub use ffi::{Histogram, HistogramBucketCfg,
+pub use ffi::{Histogram, HistoErr,
               LinearIter, LogIter, PercentileIter, RecordedIter,
               CountIterItem, PercentileIterItem };
 

@@ -12,11 +12,11 @@ pub mod test;
 
 #[repr(C)]
 #[derive(Debug)]
-pub struct hdr_histogram {
+struct hdr_histogram {
     lowest_trackable_value: int64_t,
     highest_trackable_value: int64_t,
     unit_magnitude: int32_t,
-    pub significant_figures: int64_t,
+    significant_figures: int64_t,
     sub_bucket_half_count_magnitude: int32_t,
     sub_bucket_half_count: int32_t,
     sub_bucket_mask: int64_t,
@@ -26,8 +26,8 @@ pub struct hdr_histogram {
     max_value: int64_t,
     normalizing_index_offset: int32_t,
     conversion_ratio: c_double,
-    pub counts_len: int32_t,
-    pub total_count: int64_t,
+    counts_len: int32_t,
+    total_count: int64_t,
     counts: [int64_t; 0],
 }
 
@@ -157,36 +157,13 @@ extern {
     fn hdr_strerror(errnum: c_int) -> *const c_char;
 }
 
-#[derive(Copy,Clone,Debug)]
-pub struct HistogramBucketCfg {
-    cfg: hdr_histogram_bucket_config
-}
-
-impl HistogramBucketCfg {
-    pub fn new(lowest_trackable_value: u64, highest_trackable_value: u64, significant_figures: u32) -> Result<HistogramBucketCfg, HistoErr> {
-        let mut ret = HistogramBucketCfg { cfg: Default::default() };
-        let r = unsafe {
-            hdr_calculate_bucket_config(lowest_trackable_value as int64_t,
-                                        highest_trackable_value as int64_t,
-                                        significant_figures as c_int,
-                                        &mut ret.cfg)
-        };
-
-        if r == 0 {
-            Ok(ret)
-        } else {
-            Err(HistoErr)
-        }
-    }
-}
-
 /// Catch-all error return.
 #[derive(Copy,Clone,Debug)]
-/// Catch-all error return.
 pub struct HistoErr;
 
 pub struct Histogram {
     histo: *mut hdr_histogram,
+    owned: bool,
 }
 
 /// Instance of a Histogram.
@@ -214,10 +191,14 @@ impl Histogram {
         if r != 0 || histo.is_null() {
             Err(HistoErr)
         } else {
-            Ok(Histogram { histo: histo })
+            Ok(Histogram { histo: histo, owned: true })
         }
     }
 
+    fn prealloc(histo: *mut hdr_histogram) -> Histogram {
+        Histogram { histo: histo, owned: false }
+    }
+    
     /// Zero all histogram state in place.
     pub fn reset(&mut self) { unsafe { hdr_reset(self.histo) } }
 
@@ -422,7 +403,7 @@ impl Histogram {
         if r != 0 || h.is_null() {
             Err(HistoErr)
         } else {
-            Ok(Histogram { histo: h })
+            Ok(Histogram { histo: h, owned: true })
         }
     }
 
@@ -436,7 +417,7 @@ impl Histogram {
 
 impl Drop for Histogram {
     fn drop(&mut self) {
-        if !self.histo.is_null() {
+        if self.owned && !self.histo.is_null() {
             unsafe { libc::free(self.histo as *mut c_void) }
         }
     }
@@ -451,7 +432,7 @@ impl Clone for Histogram {
 
         unsafe { ptr::copy(self.histo as *const u8, p as *mut u8, sz) };
 
-        Histogram { histo: p }
+        Histogram { histo: p, owned: true }
     }
 }
 

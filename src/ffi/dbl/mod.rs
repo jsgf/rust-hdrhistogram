@@ -4,6 +4,8 @@ use std::ptr;
 use std::mem;
 use ffi::{hdr_histogram, HistoErr};
 
+use super::Histogram;
+
 #[cfg(test)]
 mod test;
 
@@ -48,100 +50,99 @@ extern {
 }
 
 pub struct F64Histogram {
-    histo: *mut hdr_dbl_histogram
+    dblhisto: *mut hdr_dbl_histogram,
+    histo: Histogram,
 }
 
 impl F64Histogram {
     pub fn init(highest_to_lowest_ratio: i64, significant_figures: u32) -> Result<F64Histogram, HistoErr> {
-        let mut histo : *mut hdr_dbl_histogram = ptr::null_mut();
+        let mut dblhisto : *mut hdr_dbl_histogram = ptr::null_mut();
         let r = unsafe {
-            hdr_dbl_init(highest_to_lowest_ratio as int64_t, significant_figures as int32_t, &mut histo)
+            hdr_dbl_init(highest_to_lowest_ratio as int64_t, significant_figures as int32_t, &mut dblhisto)
         };
 
-        if r != 0 || histo.is_null() {
+        if r != 0 || dblhisto.is_null() {
             Err(HistoErr)
         } else {
-            Ok(F64Histogram { histo: histo })
+            Ok(F64Histogram { dblhisto: dblhisto, histo: Histogram::prealloc(unsafe { &mut (*dblhisto).values }) })
         }
     }
 
-    pub fn significant_figures(&self) -> u32 { unsafe { (*self.histo).values.significant_figures as u32 } }
-    pub fn highest_to_lowest_value_ratio(&self) -> i64 { unsafe { (*self.histo).highest_to_lowest_value_ratio as i64 } }
-    pub fn current_lowest_value(&self) -> f64 { unsafe { (*self.histo).current_lowest_value as f64 } }
-    pub fn total_count(&self) -> u64 { unsafe { (*self.histo).values.total_count as u64 } }
+    pub fn significant_figures(&self) -> u32 { unsafe { (*self.dblhisto).values.significant_figures as u32 } }
+    pub fn highest_to_lowest_value_ratio(&self) -> i64 { unsafe { (*self.dblhisto).highest_to_lowest_value_ratio as i64 } }
+    pub fn current_lowest_value(&self) -> f64 { unsafe { (*self.dblhisto).current_lowest_value as f64 } }
+    pub fn total_count(&self) -> u64 { unsafe { (*self.dblhisto).values.total_count as u64 } }
     
-    pub fn reset(&mut self) { unsafe { hdr_dbl_reset(self.histo) } }
+    pub fn reset(&mut self) { unsafe { hdr_dbl_reset(self.dblhisto) } }
     
     pub fn record_value(&mut self, value: f64) -> bool {
-        unsafe { hdr_dbl_record_value(self.histo, value) }
+        unsafe { hdr_dbl_record_value(self.dblhisto, value) }
     }
     pub fn record_values(&mut self, value: f64, count: u64) -> bool {
-        unsafe { hdr_dbl_record_values(self.histo, value, count as int64_t) }
+        unsafe { hdr_dbl_record_values(self.dblhisto, value, count as int64_t) }
     }
     pub fn record_corrected_value(&mut self, value: f64, expected_interval: f64) -> bool {
-        unsafe { hdr_dbl_record_corrected_value(self.histo, value, expected_interval) }
+        unsafe { hdr_dbl_record_corrected_value(self.dblhisto, value, expected_interval) }
     }
     pub fn record_corrected_values(&mut self, value: f64, count: u64, expected_interval: f64) -> bool {
-        unsafe { hdr_dbl_record_corrected_values(self.histo, value, count as int64_t, expected_interval) }
+        unsafe { hdr_dbl_record_corrected_values(self.dblhisto, value, count as int64_t, expected_interval) }
     }
 
     pub fn size_of_equivalent_value_range(&self, value: f64) -> f64 {
-        unsafe { hdr_dbl_size_of_equivalent_value_range(self.histo, value) }
+        unsafe { hdr_dbl_size_of_equivalent_value_range(self.dblhisto, value) }
     }
 
     pub fn lowest_equivalent_value(&self, value: f64) -> f64 {
-        unsafe { hdr_dbl_lowest_equivalent_value(self.histo, value) }
+        unsafe { hdr_dbl_lowest_equivalent_value(self.dblhisto, value) }
     }
     pub fn highest_equivalent_value(&self, value: f64) -> f64 {
-        unsafe { hdr_dbl_highest_equivalent_value(self.histo, value) }
+        unsafe { hdr_dbl_highest_equivalent_value(self.dblhisto, value) }
     }    
     pub fn median_equivalent_value(&self, value: f64) -> f64 {
-        unsafe { hdr_dbl_median_equivalent_value(self.histo, value) }
+        unsafe { hdr_dbl_median_equivalent_value(self.dblhisto, value) }
     }
     
     pub fn values_are_equivalent(&self, a: f64, b: f64) -> bool {
-        unsafe { hdr_dbl_values_are_equivalent(self.histo, a, b) }
+        unsafe { hdr_dbl_values_are_equivalent(self.dblhisto, a, b) }
     }
 
-    pub fn mean(&self) -> f64 { unsafe { hdr_dbl_mean(self.histo) } }
-    pub fn min(&self) -> f64 { unsafe { hdr_dbl_min(self.histo) } }
-    pub fn max(&self) -> f64 { unsafe { hdr_dbl_max(self.histo) } }
-    pub fn stddev(&self) -> f64 { unsafe { hdr_dbl_stddev(self.histo) } }
+    pub fn mean(&self) -> f64 { unsafe { hdr_dbl_mean(self.dblhisto) } }
+    pub fn min(&self) -> f64 { unsafe { hdr_dbl_min(self.dblhisto) } }
+    pub fn max(&self) -> f64 { unsafe { hdr_dbl_max(self.dblhisto) } }
+    pub fn stddev(&self) -> f64 { unsafe { hdr_dbl_stddev(self.dblhisto) } }
     pub fn value_at_percentile(&self, percentile: f64) -> f64 {
-        unsafe { hdr_dbl_value_at_percentile(self.histo, percentile) }
+        unsafe { hdr_dbl_value_at_percentile(self.dblhisto, percentile) }
     }
     pub fn count_at_value(&self, value: f64) -> u64 {
-        unsafe { hdr_dbl_count_at_value(self.histo, value) as u64 }
+        unsafe { hdr_dbl_count_at_value(self.dblhisto, value) as u64 }
     }
 
     pub fn add(&mut self, other: &F64Histogram) -> u64 {
-        unsafe { hdr_dbl_add(self.histo, other.histo) as u64 }
+        unsafe { hdr_dbl_add(self.dblhisto, other.dblhisto) as u64 }
     }
-
-
     
     //pub fn add_while_correcting_for_coordinated_omission(...)
 }
 
 impl Drop for F64Histogram {
     fn drop(&mut self) {
-        if !self.histo.is_null() {
-            unsafe { libc::free(self.histo as *mut c_void) }
+        if !self.dblhisto.is_null() {
+            unsafe { libc::free(self.dblhisto as *mut c_void) }
         }
     }
 }
 
 impl Clone for F64Histogram {
     fn clone(&self) -> F64Histogram {
-        let sz = mem::size_of::<hdr_dbl_histogram>() + mem::size_of::<int64_t>() * unsafe { (*self.histo).values.counts_len as usize };
+        let sz = mem::size_of::<hdr_dbl_histogram>() + mem::size_of::<int64_t>() * unsafe { (*self.dblhisto).values.counts_len as usize };
         let p = unsafe { libc::malloc(sz as size_t) as *mut hdr_dbl_histogram };
 
         if p.is_null() {
             panic!("Out of memory in F64Histogram::Clone");
         }
 
-        unsafe { ptr::copy(self.histo as *const u8, p as *mut u8, sz) };
+        unsafe { ptr::copy(self.dblhisto as *const u8, p as *mut u8, sz) };
 
-        F64Histogram { histo: p }
+        F64Histogram { dblhisto: p, histo: Histogram::prealloc(unsafe { &mut (*p).values }) }
     }
 }

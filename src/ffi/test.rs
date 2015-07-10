@@ -1,4 +1,4 @@
-use ffi::{Histogram, HistogramBucketCfg};
+use ffi::Histogram;
 
 #[allow(dead_code)]
 struct Loaded {
@@ -42,12 +42,6 @@ pub fn compare_values(a: f64, b: f64, variation: f64) -> bool { compare_double(a
 pub fn compare_percentile(a: u64, b: f64, variation: f64) -> bool {
     compare_values(a as f64, b, variation)
 }    
-
-#[test]
-fn test_invalid_bucket_cfg() {
-    assert!(HistogramBucketCfg::new(0, 6481024, 2).is_err());
-    assert!(HistogramBucketCfg::new(80, 110, 5).is_err());
-}
 
 #[test]
 fn test_create() {
