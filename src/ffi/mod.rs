@@ -1,7 +1,11 @@
 extern crate libc;
 
 use self::libc::{int64_t, int32_t, c_double, c_int, c_void, c_char, size_t, free};
+use std::str;
+use std::ffi::CStr;
 use std::marker::PhantomData;
+use std::fmt;
+use std::error::Error;
 use std::mem;
 use std::ptr;
 
@@ -158,8 +162,21 @@ extern {
 }
 
 /// Catch-all error return.
+///
+/// Something went wrong.
 #[derive(Copy,Clone,Debug)]
-pub struct HistogramErr;
+pub struct HistogramErr(&'static str);
+
+impl fmt::Display for HistogramErr {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        let &HistogramErr(msg) = self;
+        msg.fmt(fmt)
+    }
+}
+
+impl Error for HistogramErr {
+    fn description(&self) -> &str { let &HistogramErr(msg) = self; msg }
+}
 
 /// Instance of a Histogram.
 pub struct Histogram {
@@ -189,7 +206,7 @@ impl Histogram {
         };
 
         if r != 0 || histo.is_null() {
-            Err(HistogramErr)
+            Err(HistogramErr("Histogram init failed"))
         } else {
             Ok(Histogram { histo: histo, owned: true })
         }
@@ -378,7 +395,7 @@ impl Histogram {
         let r = unsafe { hdr_log_encode(self.histo, &mut p) };
 
         if r != 0 || p.is_null() {
-            Err(HistogramErr)
+            Err(HistogramErr(str::from_utf8(unsafe { CStr::from_ptr(hdr_strerror(r)) }.to_bytes()).unwrap()))
         } else {
             let sz = unsafe { libc::strlen(p) as usize };
             let s = unsafe {
@@ -401,7 +418,7 @@ impl Histogram {
         let r = unsafe { hdr_log_decode(&mut h, bytes.as_ptr() as *const c_char, bytes.len() as size_t) };
 
         if r != 0 || h.is_null() {
-            Err(HistogramErr)
+            Err(HistogramErr(str::from_utf8(unsafe { CStr::from_ptr(hdr_strerror(r)) }.to_bytes()).unwrap()))
         } else {
             Ok(Histogram { histo: h, owned: true })
         }

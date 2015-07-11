@@ -65,7 +65,7 @@ impl F64Histogram {
         };
 
         if r != 0 || dblhisto.is_null() {
-            Err(HistogramErr)
+            Err(HistogramErr("F64Histogram init failed"))
         } else {
             Ok(F64Histogram { dblhisto: dblhisto, histo: Histogram::prealloc(unsafe { &mut (*dblhisto).values }) })
         }
