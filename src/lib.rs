@@ -30,4 +30,4 @@ pub use ffi::{Histogram, HistoErr,
               LinearIter, LogIter, PercentileIter, RecordedIter,
               CountIterItem, PercentileIterItem };
 
-pub use ffi::dbl::{F64Histogram};
+pub use ffi::dbl::{F64Histogram, F64LinearIter, F64LogIter, F64PercentileIter, F64RecordedIter, F64CountIterItem, F64PercentileIterItem};

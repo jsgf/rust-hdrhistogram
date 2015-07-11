@@ -2,7 +2,9 @@ extern crate libc;
 use self::libc::{int64_t, int32_t, c_double, c_int, c_void, size_t, free};
 use std::ptr;
 use std::mem;
-use ffi::{hdr_histogram, HistoErr};
+use ffi::{hdr_histogram, HistoErr,
+          hdr_iter_log_init, hdr_iter_linear_init, hdr_iter_percentile_init, hdr_iter_recorded_init, hdr_iter_next,
+          hdr_iter, hdr_iter_linear, hdr_iter_percentiles, hdr_iter_log, hdr_iter_recorded};
 
 use super::Histogram;
 
@@ -68,6 +70,10 @@ impl F64Histogram {
         }
     }
 
+    fn int_to_dbl(&self) -> f64 {
+        unsafe { (*self.dblhisto).int_to_dbl_conversion_ratio }
+    }
+    
     pub fn significant_figures(&self) -> u32 { unsafe { (*self.dblhisto).values.significant_figures as u32 } }
     pub fn highest_to_lowest_value_ratio(&self) -> i64 { unsafe { (*self.dblhisto).highest_to_lowest_value_ratio as i64 } }
     pub fn current_lowest_value(&self) -> f64 { unsafe { (*self.dblhisto).current_lowest_value as f64 } }
@@ -120,9 +126,35 @@ impl F64Histogram {
     pub fn add(&mut self, other: &F64Histogram) -> u64 {
         unsafe { hdr_dbl_add(self.dblhisto, other.dblhisto) as u64 }
     }
-    
+
+    pub fn linear_iter<'a>(&'a self, value_units_per_bucket: u64) -> F64LinearIter<'a> {
+        let mut ret = F64LinearIter { iter: Default::default(), histo: self };
+        unsafe { hdr_iter_linear_init(&mut ret.iter, self.histo.histo, value_units_per_bucket as int64_t) };
+        ret
+    }
+
+    pub fn log_iter<'a>(&'a self, value_units_per_bucket: u64, log_base: f64) -> F64LogIter<'a> {
+        let mut ret = F64LogIter { iter: Default::default(), histo: self };
+        unsafe { hdr_iter_log_init(&mut ret.iter, self.histo.histo, value_units_per_bucket as int64_t, log_base) };
+        ret
+    }
+
+    pub fn recorded_iter<'a>(&'a self) -> F64RecordedIter<'a> {
+        let mut ret = F64RecordedIter { iter: Default::default(), histo: self };
+        unsafe { hdr_iter_recorded_init(&mut ret.iter, self.histo.histo) };
+        ret
+    }
+
+    pub fn percentile_iter<'a>(&'a self, ticks_per_half_distance: u32) -> F64PercentileIter<'a> {
+        let mut ret = F64PercentileIter { iter: Default::default(), histo: self };
+        unsafe { hdr_iter_percentile_init(&mut ret.iter, self.histo.histo, ticks_per_half_distance as int32_t) };
+        ret
+    }
+
+
     //pub fn add_while_correcting_for_coordinated_omission(...)
 }
+
 
 impl Drop for F64Histogram {
     fn drop(&mut self) {
@@ -144,5 +176,145 @@ impl Clone for F64Histogram {
         unsafe { ptr::copy(self.dblhisto as *const u8, p as *mut u8, sz) };
 
         F64Histogram { dblhisto: p, histo: Histogram::prealloc(unsafe { &mut (*p).values }) }
+    }
+}
+
+#[derive(PartialEq,PartialOrd,Clone,Copy,Debug)]
+pub struct F64CountIterItem {
+    /// The count of recorded values in the histogram that were added to the `total_count_to_this_value`
+    /// (below) as a result on this iteration step. Since multiple iteration steps may occur with
+    /// overlapping equivalent value ranges, the count may be lower than the count found at the
+    /// value (e.g. multiple linear steps or percentile levels can occur within a single equivalent
+    /// value range)
+    pub count_added_in_this_iteration_step: u64,
+
+    /// The sum of all recorded values in the histogram at values equal or smaller than `value_from_index`.
+    pub count_to_index: u64,
+
+    /// The actual value level that was iterated to by the iterator
+    pub value_from_index: f64,
+
+    /// Highest value equivalent to `value_from_index`.
+    pub highest_equivalent_value: f64,
+    
+    /// The count of recorded values in the histogram that exactly match this
+    /// `lowest_equivalent_value(value_from_index)`..`highest_equivalent_value(value_from_index)`
+    /// value range.
+    pub count_at_index: u64,
+}
+
+#[derive(PartialEq,PartialOrd,Clone,Copy,Debug)]
+pub struct F64PercentileIterItem {
+    /// The percentile of recorded values in the histogram at values equal or smaller than `value_from_index`.
+    pub percentile: f64,
+
+    /// The sum of all recorded values in the histogram at values equal or smaller than `value_from_index`.
+    pub count_to_index: u64,
+
+    /// The actual value level that was iterated to by the iterator
+    pub value_from_index: f64,
+
+    /// Highest value equivalent to `value_from_index`.
+    pub highest_equivalent_value: f64,
+    
+    /// The count of recorded values in the histogram that exactly match this
+    /// `lowest_equivalent_value(value_from_index)`..`highest_equivalent_value(value_from_index)`
+    /// value range.
+    pub count_at_index: u64,
+}
+
+pub struct F64LinearIter<'a> {
+    iter: hdr_iter,
+    histo: &'a F64Histogram,
+}
+
+impl<'a> Iterator for F64LinearIter<'a> {
+    type Item = F64CountIterItem;
+    
+    fn next(&mut self) -> Option<F64CountIterItem> {
+        if unsafe { hdr_iter_next(&mut self.iter) } {
+            let lin : &hdr_iter_linear = unsafe { mem::transmute(&self.iter.union) };
+            let scale = self.histo.int_to_dbl();
+            
+            Some(F64CountIterItem { count_added_in_this_iteration_step: lin.count_added_in_this_iteration_step as u64,
+                                    value_from_index: self.iter.value_from_index as f64 * scale,
+                                    highest_equivalent_value: self.iter.highest_equivalent_value as f64 * scale,
+                                    count_to_index: self.iter.count_to_index as u64,
+                                    count_at_index: self.iter.count_at_index as u64 })
+        } else {
+            None
+        }
+    }
+}
+
+pub struct F64LogIter<'a> {
+    iter: hdr_iter,
+    histo: &'a F64Histogram,
+}
+
+impl<'a> Iterator for F64LogIter<'a> {
+    type Item = F64CountIterItem;
+    
+    fn next(&mut self) -> Option<F64CountIterItem> {
+        if unsafe { hdr_iter_next(&mut self.iter) } {
+            let log : &hdr_iter_log = unsafe { mem::transmute(&self.iter.union) };
+            let scale = self.histo.int_to_dbl();
+            
+            Some(F64CountIterItem { count_added_in_this_iteration_step: log.count_added_in_this_iteration_step as u64,
+                                    value_from_index: self.iter.value_from_index as f64 * scale,
+                                    highest_equivalent_value: self.iter.highest_equivalent_value as f64 * scale,
+                                    count_to_index: self.iter.count_to_index as u64,
+                                    count_at_index: self.iter.count_at_index as u64 })
+        } else {
+            None
+        }
+    }
+}
+
+pub struct F64RecordedIter<'a> {
+    iter: hdr_iter,
+    histo: &'a F64Histogram,
+}
+
+impl<'a> Iterator for F64RecordedIter<'a> {
+    type Item = F64CountIterItem;
+    
+    fn next(&mut self) -> Option<F64CountIterItem> {
+        if unsafe { hdr_iter_next(&mut self.iter) } {
+            let rec : &hdr_iter_recorded = unsafe { mem::transmute(&self.iter.union) };
+            let scale = self.histo.int_to_dbl();
+            
+            Some(F64CountIterItem { count_added_in_this_iteration_step: rec.count_added_in_this_iteration_step as u64,
+                                    value_from_index: self.iter.value_from_index as f64 * scale,
+                                    highest_equivalent_value: self.iter.highest_equivalent_value as f64 * scale,
+                                    count_to_index: self.iter.count_to_index as u64,
+                                    count_at_index: self.iter.count_at_index as u64 })
+        } else {
+            None
+        }
+    }
+}
+
+pub struct F64PercentileIter<'a> {
+    iter: hdr_iter,
+    histo: &'a F64Histogram,
+}
+
+impl<'a> Iterator for F64PercentileIter<'a> {
+    type Item = F64PercentileIterItem;
+    
+    fn next(&mut self) -> Option<F64PercentileIterItem> {
+        if unsafe { hdr_iter_next(&mut self.iter) } {
+            let perc : &hdr_iter_percentiles = unsafe { mem::transmute(&self.iter.union) };
+            let scale = self.histo.int_to_dbl();
+            
+            Some(F64PercentileIterItem { percentile: perc.percentile,
+                                         value_from_index: self.iter.value_from_index as f64 * scale,
+                                         highest_equivalent_value: self.iter.highest_equivalent_value as f64 * scale,
+                                         count_to_index: self.iter.count_to_index as u64,
+                                         count_at_index: self.iter.count_at_index as u64 })
+        } else {
+            None
+        }
     }
 }
