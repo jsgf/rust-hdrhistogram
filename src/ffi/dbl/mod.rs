@@ -2,7 +2,7 @@ extern crate libc;
 use self::libc::{int64_t, int32_t, c_double, c_int, c_void, size_t, free};
 use std::ptr;
 use std::mem;
-use ffi::{hdr_histogram, HistoErr,
+use ffi::{hdr_histogram, HistogramErr,
           hdr_iter_log_init, hdr_iter_linear_init, hdr_iter_percentile_init, hdr_iter_recorded_init, hdr_iter_next,
           hdr_iter, hdr_iter_linear, hdr_iter_percentiles, hdr_iter_log, hdr_iter_recorded};
 
@@ -51,20 +51,21 @@ extern {
     fn hdr_dbl_count_at_value(h: *const hdr_dbl_histogram, value: c_double) -> int64_t;
 }
 
+/// Instance of a histogram recording `f64` values.
 pub struct F64Histogram {
     dblhisto: *mut hdr_dbl_histogram,
     histo: Histogram,
 }
 
 impl F64Histogram {
-    pub fn init(highest_to_lowest_ratio: i64, significant_figures: u32) -> Result<F64Histogram, HistoErr> {
+    pub fn init(highest_to_lowest_ratio: i64, significant_figures: u32) -> Result<F64Histogram, HistogramErr> {
         let mut dblhisto : *mut hdr_dbl_histogram = ptr::null_mut();
         let r = unsafe {
             hdr_dbl_init(highest_to_lowest_ratio as int64_t, significant_figures as int32_t, &mut dblhisto)
         };
 
         if r != 0 || dblhisto.is_null() {
-            Err(HistoErr)
+            Err(HistogramErr)
         } else {
             Ok(F64Histogram { dblhisto: dblhisto, histo: Histogram::prealloc(unsafe { &mut (*dblhisto).values }) })
         }
@@ -179,6 +180,7 @@ impl Clone for F64Histogram {
     }
 }
 
+/// Iterator result over `F64Histogram` containing counts.
 #[derive(PartialEq,PartialOrd,Clone,Copy,Debug)]
 pub struct F64CountIterItem {
     /// The count of recorded values in the histogram that were added to the `total_count_to_this_value`
@@ -203,6 +205,7 @@ pub struct F64CountIterItem {
     pub count_at_index: u64,
 }
 
+/// Iterator result over `F64Histogram` containing percentiles.
 #[derive(PartialEq,PartialOrd,Clone,Copy,Debug)]
 pub struct F64PercentileIterItem {
     /// The percentile of recorded values in the histogram at values equal or smaller than `value_from_index`.
@@ -223,6 +226,7 @@ pub struct F64PercentileIterItem {
     pub count_at_index: u64,
 }
 
+/// Iterator over `F64Histogram` producing linear buckets.
 pub struct F64LinearIter<'a> {
     iter: hdr_iter,
     histo: &'a F64Histogram,
@@ -247,6 +251,7 @@ impl<'a> Iterator for F64LinearIter<'a> {
     }
 }
 
+/// Iterator over `F64Histogram` producing logarithmic buckets.
 pub struct F64LogIter<'a> {
     iter: hdr_iter,
     histo: &'a F64Histogram,
@@ -271,6 +276,7 @@ impl<'a> Iterator for F64LogIter<'a> {
     }
 }
 
+/// Iterator over `F64Histogram` producing recorded samples.
 pub struct F64RecordedIter<'a> {
     iter: hdr_iter,
     histo: &'a F64Histogram,
@@ -295,6 +301,7 @@ impl<'a> Iterator for F64RecordedIter<'a> {
     }
 }
 
+/// Iterator over `F64Histogram` producing percentiles.
 pub struct F64PercentileIter<'a> {
     iter: hdr_iter,
     histo: &'a F64Histogram,
