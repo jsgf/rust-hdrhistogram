@@ -9,7 +9,7 @@
 //! # Example
 //!
 //! This sets up a histogram to record values in the range 1..1000_000 with 2 significant figures of
-//! precision. It then records 
+//! precision. It then records one count each of 1 and 10, and 40 counts of 100.
 //!
 //! ```
 //! # use hdrhistogram::Histogram;
