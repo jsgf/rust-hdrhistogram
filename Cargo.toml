@@ -5,6 +5,7 @@ readme = "README.md"
 authors = ["Jeremy Fitzhardinge <jeremy@goop.org>"]
 description = "Binding to HdrHistogram_c library"
 repository = "https://github.com/jsgf/rust-hdrhistogram"
+documentation = "https://jsgf.github.io/hdrhistogram/"
 keywords = [ "ffi", "binding", "hdrhistogram", "histogram" ]
 license = "MIT"
 #links = "hdr_histogram"
