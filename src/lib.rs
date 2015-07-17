@@ -4,7 +4,7 @@
 //! [HdrHistogram_c](https://github.com/hdrhistogram/HdrHistogram_c), a flexible library for
 //! recording histograms without having to know very much about the data being histogrammed.
 //!
-//! The top-level type is `Histogram`.
+//! The top-level type is [`Histogram`](struct.Histogram.html).
 //!
 //! # Example
 //!
