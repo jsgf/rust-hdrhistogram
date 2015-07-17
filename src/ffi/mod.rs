@@ -227,6 +227,7 @@ impl Histogram {
     /// h.record_value(5);
     /// assert_eq!(h.total_count(), 1);
     /// ```
+    #[inline]
     pub fn record_value(&mut self, value: u64) -> bool {
         unsafe { hdr_record_value(self.histo, value as int64_t) }
     }
@@ -239,6 +240,7 @@ impl Histogram {
     /// h.record_values(5, 10);
     /// assert_eq!(h.total_count(), 10);
     /// ```
+    #[inline]
     pub fn record_values(&mut self, value: u64, count: u64) -> bool {
         unsafe { hdr_record_values(self.histo, value as int64_t, count as int64_t) }
     }
@@ -247,11 +249,13 @@ impl Histogram {
     /// latency measurements taked on a regular timebase (expected_interval). Any latency that's
     /// well above that interval implies some kind of outage in which sampled were lost. This
     /// corrects for those lost samples to preserve the integrity of the overall statistics.
+    #[inline]
     pub fn record_corrected_value(&mut self, value: u64, expected_interval: u64) -> bool {
         unsafe { hdr_record_corrected_value(self.histo, value as int64_t, expected_interval as int64_t) }
     }
 
     /// As with `record_corrected_value()` but multiple counts of the value.
+    #[inline]
     pub fn record_corrected_values(&mut self, value: u64, count: u64, expected_interval: u64) -> bool {
         unsafe { hdr_record_corrected_values(self.histo, value as int64_t, count as int64_t, expected_interval as int64_t) }
     }
