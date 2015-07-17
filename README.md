@@ -43,4 +43,9 @@ hdrhistogram = "*"
 
 The API is not at all stable right now.
 
+Documentation
+-------------
+
+Docs are hosted [here](https://jsgf.github.io/hdrhistogram/).
+
 Jeremy Fitzhardinge <jeremy@goop.org>
