@@ -7,6 +7,7 @@ use ffi::{hdr_histogram, HistogramErr,
           hdr_iter, hdr_iter_linear, hdr_iter_percentiles, hdr_iter_log, hdr_iter_recorded};
 
 use super::Histogram;
+use super::Result;
 
 #[cfg(test)]
 mod test;
@@ -58,7 +59,7 @@ pub struct F64Histogram {
 }
 
 impl F64Histogram {
-    pub fn init(highest_to_lowest_ratio: i64, significant_figures: u32) -> Result<F64Histogram, HistogramErr> {
+    pub fn init(highest_to_lowest_ratio: i64, significant_figures: u32) -> Result<F64Histogram> {
         let mut dblhisto : *mut hdr_dbl_histogram = ptr::null_mut();
         let r = unsafe {
             hdr_dbl_init(highest_to_lowest_ratio as int64_t, significant_figures as int32_t, &mut dblhisto)
