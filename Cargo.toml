@@ -1,6 +1,6 @@
 [package]
 name = "hdrhistogram"
-version = "0.1.8"
+version = "0.1.9"
 readme = "README.md"
 authors = ["Jeremy Fitzhardinge <jeremy@goop.org>"]
 description = "Binding to HdrHistogram_c library"
