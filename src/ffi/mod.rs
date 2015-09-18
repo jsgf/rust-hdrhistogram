@@ -191,6 +191,8 @@ pub struct Histogram {
     owned: bool,
 }
 
+unsafe impl Send for Histogram {}
+
 impl Histogram {
     /// Create a new Histogram instance. `lowest_trackable_value`..`highest_trackable_value` defines
     /// the range of values in the `Histogram`. `lowest_trackable_value` must be >= 1.
