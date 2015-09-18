@@ -47,7 +47,7 @@ pub fn compare_percentile(a: u64, b: f64, variation: f64) -> bool {
 fn test_create() {
     let h = Histogram::init(1, 3600000000, 3).unwrap();
 
-    assert_eq!(h.get_memory_size(), 188520);
+    assert_eq!(h.get_memory_size(), 188512);
     assert_eq!(h.get_counts_len(), 23552);
 }
 

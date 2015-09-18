@@ -29,8 +29,6 @@ mod ffi;
 pub use ffi::{Histogram, HistogramErr, LinearIter, LogIter, PercentileIter, RecordedIter,
               CountIterItem, PercentileIterItem };
 
-pub use ffi::dbl::{F64Histogram, F64LinearIter, F64LogIter, F64PercentileIter, F64RecordedIter,
-                   F64CountIterItem, F64PercentileIterItem};
 
 /// Result from operations which may fail.
 pub type Result<T> = std::result::Result<T, HistogramErr>;

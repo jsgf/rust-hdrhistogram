@@ -8,8 +8,10 @@ repository = "https://github.com/jsgf/rust-hdrhistogram"
 documentation = "https://jsgf.github.io/hdrhistogram/"
 keywords = [ "ffi", "binding", "hdrhistogram", "histogram" ]
 license = "MIT"
-#links = "hdr_histogram"
-#build = "build.rs"
+build = "build.rs"
 
 [dependencies]
 libc = "0.1.8"
+
+[build-dependencies]
+cmake = "0.1"

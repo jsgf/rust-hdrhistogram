@@ -12,8 +12,6 @@ use std::result;
 
 pub use super::Result;
 
-pub mod dbl;
-
 #[cfg(test)]
 pub mod test;
 
@@ -23,7 +21,7 @@ struct hdr_histogram {
     lowest_trackable_value: int64_t,
     highest_trackable_value: int64_t,
     unit_magnitude: int32_t,
-    significant_figures: int64_t,
+    significant_figures: int32_t,
     sub_bucket_half_count_magnitude: int32_t,
     sub_bucket_half_count: int32_t,
     sub_bucket_mask: int64_t,
@@ -77,7 +75,6 @@ struct hdr_iter_linear {
 
 #[repr(C)]
 struct hdr_iter_log {
-    value_units_first_bucket: int64_t,
     log_base: c_double,
     count_added_in_this_iteration_step: int64_t,
     next_value_reporting_level: int64_t,
@@ -89,15 +86,22 @@ struct hdr_iter_log {
 #[derive(Debug)]
 struct hdr_iter {
     h: *const hdr_histogram,
-    
-    bucket_index: int32_t,
-    sub_bucket_index: int32_t,
-    count_at_index: int64_t,
-    count_to_index: int64_t,
-    value_from_index: int64_t,
-    highest_equivalent_value: int64_t,
 
-    union: [int64_t; 5],        // hdr_iter_log
+    /** raw index into the counts array */
+    counts_index: int32_t,
+    /** value directly from array for the current counts_index */
+    count: int64_t,
+    /** sum of all of the counts up to and including the count at this index */
+    cumulative_count: int64_t,
+    /** The current value based on counts_index */
+    value: int64_t,
+    highest_equivalent_value: int64_t,
+    lowest_equivalent_value: int64_t,
+    median_equivalent_value: int64_t,
+    value_iterated_from: int64_t,
+    value_iterated_to: int64_t,
+
+    union: [int64_t; 4],        // hdr_iter_log/linear
 
     _next_fp: *const c_void,    // function pointer
 }
@@ -215,10 +219,6 @@ impl Histogram {
         }
     }
 
-    fn prealloc(histo: *mut hdr_histogram) -> Histogram {
-        Histogram { histo: histo, owned: false }
-    }
-    
     /// Zero all histogram state in place.
     pub fn reset(&mut self) { unsafe { hdr_reset(self.histo) } }
 
@@ -471,18 +471,22 @@ pub struct CountIterItem {
     pub count_added_in_this_iteration_step: u64,
 
     /// The sum of all recorded values in the histogram at values equal or smaller than `value_from_index`.
-    pub count_to_index: u64,
+    pub count: u64,
 
     /// The actual value level that was iterated to by the iterator
-    pub value_from_index: u64,
+    pub value: u64,
 
-    /// Highest value equivalent to `value_from_index`.
+    /// Highest value equivalent to `value`.
     pub highest_equivalent_value: u64,
-    
-    /// The count of recorded values in the histogram that exactly match this
-    /// `lowest_equivalent_value(value_from_index)`..`highest_equivalent_value(value_from_index)`
-    /// value range.
-    pub count_at_index: u64,
+
+    /// Median value equivalent to `value`.
+    pub median_equivalent_value: u64,
+
+    /// Lowest value equivalent to `value`.
+    pub lowest_equivalent_value: u64,
+
+    value_iterated_from: u64,
+    value_iterated_to: u64,
 }
 
 /// Iterator result producing percentiles.
@@ -492,18 +496,22 @@ pub struct PercentileIterItem {
     pub percentile: f64,
 
     /// The sum of all recorded values in the histogram at values equal or smaller than `value_from_index`.
-    pub count_to_index: u64,
+    pub count: u64,
 
     /// The actual value level that was iterated to by the iterator
-    pub value_from_index: u64,
+    pub value: u64,
 
-    /// Highest value equivalent to `value_from_index`.
+    /// Highest value equivalent to `value`.
     pub highest_equivalent_value: u64,
-    
-    /// The count of recorded values in the histogram that exactly match this
-    /// `lowest_equivalent_value(value_from_index)`..`highest_equivalent_value(value_from_index)`
-    /// value range.
-    pub count_at_index: u64,
+
+    /// Median value equivalent to `value`.
+    pub median_equivalent_value: u64,
+
+    /// Lowest value equivalent to `value`.
+    pub lowest_equivalent_value: u64,
+
+    value_iterated_from: u64,
+    value_iterated_to: u64,
 }
 
 /// Iterator over `Histogram` producing linear buckets.
@@ -520,10 +528,13 @@ impl<'a> Iterator for LinearIter<'a> {
             let lin : &hdr_iter_linear = unsafe { mem::transmute(&self.iter.union) };
             
             Some(CountIterItem { count_added_in_this_iteration_step: lin.count_added_in_this_iteration_step as u64,
-                                 value_from_index: self.iter.value_from_index as u64,
+                                 count: self.iter.count as u64,
+                                 value: self.iter.value as u64,
                                  highest_equivalent_value: self.iter.highest_equivalent_value as u64,
-                                 count_to_index: self.iter.count_to_index as u64,
-                                 count_at_index: self.iter.count_at_index as u64 })
+                                 lowest_equivalent_value: self.iter.lowest_equivalent_value as u64,
+                                 median_equivalent_value: self.iter.median_equivalent_value as u64,
+                                 value_iterated_from: self.iter.value_iterated_from as u64,
+                                 value_iterated_to: self.iter.value_iterated_to as u64 })
         } else {
             None
         }
@@ -544,10 +555,13 @@ impl<'a> Iterator for LogIter<'a> {
             let log : &hdr_iter_log = unsafe { mem::transmute(&self.iter.union) };
             
             Some(CountIterItem { count_added_in_this_iteration_step: log.count_added_in_this_iteration_step as u64,
-                                 value_from_index: self.iter.value_from_index as u64,
+                                 count: self.iter.count as u64,
+                                 value: self.iter.value as u64,
                                  highest_equivalent_value: self.iter.highest_equivalent_value as u64,
-                                 count_to_index: self.iter.count_to_index as u64,
-                                 count_at_index: self.iter.count_at_index as u64 })
+                                 lowest_equivalent_value: self.iter.lowest_equivalent_value as u64,
+                                 median_equivalent_value: self.iter.median_equivalent_value as u64,
+                                 value_iterated_from: self.iter.value_iterated_from as u64,
+                                 value_iterated_to: self.iter.value_iterated_to as u64 })
         } else {
             None
         }
@@ -568,10 +582,13 @@ impl<'a> Iterator for RecordedIter<'a> {
             let rec : &hdr_iter_recorded = unsafe { mem::transmute(&self.iter.union) };
             
             Some(CountIterItem { count_added_in_this_iteration_step: rec.count_added_in_this_iteration_step as u64,
-                                 value_from_index: self.iter.value_from_index as u64,
+                                 count: self.iter.count as u64,
+                                 value: self.iter.value as u64,
                                  highest_equivalent_value: self.iter.highest_equivalent_value as u64,
-                                 count_to_index: self.iter.count_to_index as u64,
-                                 count_at_index: self.iter.count_at_index as u64 })
+                                 lowest_equivalent_value: self.iter.lowest_equivalent_value as u64,
+                                 median_equivalent_value: self.iter.median_equivalent_value as u64,
+                                 value_iterated_from: self.iter.value_iterated_from as u64,
+                                 value_iterated_to: self.iter.value_iterated_to as u64 })
         } else {
             None
         }
@@ -592,10 +609,13 @@ impl<'a> Iterator for PercentileIter<'a> {
             let perc : &hdr_iter_percentiles = unsafe { mem::transmute(&self.iter.union) };
             
             Some(PercentileIterItem { percentile: perc.percentile,
-                                      value_from_index: self.iter.value_from_index as u64,
+                                      count: self.iter.count as u64,
+                                      value: self.iter.value as u64,
                                       highest_equivalent_value: self.iter.highest_equivalent_value as u64,
-                                      count_to_index: self.iter.count_to_index as u64,
-                                      count_at_index: self.iter.count_at_index as u64 })
+                                      lowest_equivalent_value: self.iter.lowest_equivalent_value as u64,
+                                      median_equivalent_value: self.iter.median_equivalent_value as u64,
+                                      value_iterated_from: self.iter.value_iterated_from as u64,
+                                      value_iterated_to: self.iter.value_iterated_to as u64 })
         } else {
             None
         }
