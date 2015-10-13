@@ -1,6 +1,8 @@
 Rust binding to HdrHistogram_c library
 ======================================
 
+[![Build Status](https://travis-ci.org/jsgf/rust-hdrhistogram.svg?branch=master)](https://travis-ci.org/jsgf/rust-hdrhistogram)
+
 This is a thin binding to the [HdrHistogram_c](https://github.com/HdrHistogram/HdrHistogram_c)
 library, itself a port of [HdrHistogram](http://hdrhistogram.org/). Aside from the normal Rust
 safety features, the main embellishment is an implementation of the Iterator trait for the various
