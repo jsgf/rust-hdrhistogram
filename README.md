@@ -19,20 +19,6 @@ TODO:
  * Complete iterator items
  * anything missing
 
-Prerequisites
--------------
-
-First install [HdrHistogram_c](https://github.com/HdrHistogram/HdrHistogram_c):
-```sh
-$ git clone https://github.com/HdrHistogram/HdrHistogram_c
-$ cd HdrHistogram_c
-$ cmake -D CMAKE_BUILD_TYPE=release .
-$ make
-# make install
-```
-
-You may need to run ldconfig after installing to make sure the installed library is found properly.
-
 Use
 ---
 
