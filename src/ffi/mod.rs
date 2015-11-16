@@ -111,7 +111,6 @@ impl Default for hdr_iter {
 }
 
 #[allow(dead_code)]
-#[link(name = "hdr_histogram")]
 extern {
     fn hdr_init(lowest_trackable_value: int64_t, highest_trackable_value: int64_t,
                 significant_figures: c_int, res: *mut *mut hdr_histogram) -> c_int;

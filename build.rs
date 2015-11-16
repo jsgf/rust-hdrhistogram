@@ -12,4 +12,5 @@ fn main() {
     println!("cargo:rustc-link-search=native={}/lib", dst.display());
     println!("cargo:rustc-link-lib=static=hdr_histogram_static");
     println!("cargo:rustc-link-lib=z");
+    println!("cargo:rustc-link-lib=m");
 }
