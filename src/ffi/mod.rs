@@ -1,6 +1,6 @@
 extern crate libc;
 
-use self::libc::{int64_t, int32_t, c_double, c_int, c_void, c_char, size_t, free};
+use self::libc::{int64_t, int32_t, c_double, c_int, c_void, c_char, size_t};
 use std::str;
 use std::ffi::CStr;
 use std::marker::PhantomData;
@@ -81,7 +81,6 @@ struct hdr_iter_log {
     next_value_reporting_level_lowest_equivalent: int64_t,
 }
 
-#[allow(raw_pointer_derive)]
 #[repr(C)]
 #[derive(Debug)]
 struct hdr_iter {
