@@ -1,8 +1,9 @@
 language: rust
+
 rust:
-  - stable
-  - beta
-  - nightly
+- stable
+- beta
+- nightly
 
 addons:
   apt:
@@ -15,12 +16,21 @@ addons:
     - gcc-5
 
 env:
+  matrix:
   - COMPILER=gcc-4.7
   - COMPILER=gcc-4.8
   - COMPILER=gcc-4.9
   - COMPILER=gcc-5
+  global:
+  - GH_REPO=github.com/jsgf/rust-hdrhistogram.git
+  - DOCS_OUT=target/doc
+  - secure: Kaaaoh87dEI2KodXANK8Z3crtCFmzSprShMNkYZIPhqQbJAfBALII/C896EEY4xwW/cg2HXZnMpkHnXVTGCsjwioWf4eE4eRgpPw8iPKfES9GEN9sMAPXwY72vqtO10xrTwZImtkl+Exo5wGjSHxf+0pgTej9dokgQyC186Gmh+W/kO6/5d+RS2HRQoSEYepHPyFS4Y8SGfrgq178sQ05C2E077ueAXr57p6HwoR9ZWxBRegLJc1rNpt6XD0cuDvASoDv7LvE6ioZP1JalZfXW0sR9UfuXvZAaEhEUqAfEb/7q31wVQV0XSZiQS5ZSNN24c1noeWu9zCIJveJPwp3usXO51DzNBmLLzCIWLiuZJA4UeyIcsrXb0kvEVvYh938QjUXS5gmaVQtDSX4ia7U75HPylmLqwEZiobWGc8eDSJh+oJyffsE4dufDVSMnsGhmpds2yGWU9m4PUsm6Cg7fBCYBORBj8hvOrtoTsRppwVINwEn6bNk0OylbZbnv2fj4hO8c1+Qgceq0yvKyPuzUh12f4WhTWCAxox+NZy/L7kiFMhh6Bl/1VkiAGHT83ojWYjF/D1IIRIH4B7ogf+ltagOdpK/UUMNtZn7+C1hairFWjgO6li44g98Rg30dVaFqdWb7uPlFvR0CdTiqxKsdWgqm8OefCMi+PXKvDLzgM=
 
 script:
-  - $COMPILER --version
-  - env CC=$COMPILER cargo build --verbose
-  - env CC=$COMPILER cargo test --verbose
+- "$COMPILER --version"
+- env CC=$COMPILER cargo build --verbose
+- env CC=$COMPILER cargo test --verbose
+
+after_success:
+- cargo doc --no-deps --verbose
+- ./.travis-update-gh-pages.sh
