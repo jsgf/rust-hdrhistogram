@@ -32,5 +32,5 @@ script:
 - env CC=$COMPILER cargo test --verbose
 
 after_success:
-- cargo doc --no-deps --verbose
-- ./.travis-update-gh-pages.sh
+- echo "COMPILER=$COMPILER TRAVIS_RUST_VERSION=$TRAVIS_RUST_VERSION"
+- if [ "$COMPILER" = gcc-5 -a "$TRAVIS_RUST_VERSION" = stable ]; then cargo doc --no-deps --verbose && ./.travis-update-gh-pages.sh; fi
