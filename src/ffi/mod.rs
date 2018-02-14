@@ -201,7 +201,7 @@ impl Histogram {
     ///
     /// # Example
     /// ```
-    /// # use hdrhistogram::Histogram;
+    /// # use hdrhistogram_c::Histogram;
     /// let mut h = Histogram::init(1, 100000, 2).unwrap();
     /// h.record_value(10);  // record a single count of '10'
     /// ```
@@ -225,7 +225,7 @@ impl Histogram {
     /// Record a specific value. Returns true if successful.
     ///
     /// ```
-    /// # use hdrhistogram::Histogram;
+    /// # use hdrhistogram_c::Histogram;
     /// # let mut h = Histogram::init(1, 10, 1).unwrap();
     /// h.record_value(5);
     /// assert_eq!(h.total_count(), 1);
@@ -238,7 +238,7 @@ impl Histogram {
     /// Record multiple counts of a specific value. Returns true if successful.
     ///
     /// ```
-    /// # use hdrhistogram::Histogram;
+    /// # use hdrhistogram_c::Histogram;
     /// # let mut h = Histogram::init(1, 10, 1).unwrap();
     /// h.record_values(5, 10);
     /// assert_eq!(h.total_count(), 10);
@@ -284,7 +284,7 @@ impl Histogram {
     /// Smallest recorded value.
     ///
     /// ```
-    /// # use hdrhistogram::Histogram;
+    /// # use hdrhistogram_c::Histogram;
     /// # let mut h = Histogram::init(1, 10, 1).unwrap();
     /// h.record_value(1);
     /// h.record_value(5);
@@ -297,7 +297,7 @@ impl Histogram {
     /// Largest recorded value.
     ///
     /// ```
-    /// # use hdrhistogram::Histogram;
+    /// # use hdrhistogram_c::Histogram;
     /// # let mut h = Histogram::init(1, 10, 1).unwrap();
     /// h.record_value(1);
     /// h.record_value(5);
@@ -310,7 +310,7 @@ impl Histogram {
     /// Value at a particular percentile (0-100).
     ///
     /// ```
-    /// # use hdrhistogram::Histogram;
+    /// # use hdrhistogram_c::Histogram;
     /// # let mut h = Histogram::init(1, 100, 2).unwrap();
     /// h.record_values(20, 10);
     /// h.record_value(40);
@@ -361,7 +361,7 @@ impl Histogram {
     /// Linear iterator over values. Results are returned in equally weighted buckets.
     ///
     /// ```
-    /// # use hdrhistogram::Histogram;
+    /// # use hdrhistogram_c::Histogram;
     /// let mut h = Histogram::init(1, 100000, 3).unwrap();
     /// for i in 1..100 { h.record_values(i, i); }
     /// for (i, c) in h.linear_iter(1).enumerate() {    // 100 buckets

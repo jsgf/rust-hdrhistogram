@@ -1,6 +1,8 @@
 Rust binding to HdrHistogram_c library
 ======================================
 
+NOTE: This crate is no longer actively maintained, and is intended for backwards compatibility. New users should use the pure Rust "hdrhistogram" crate.
+
 [![Build Status](https://travis-ci.org/jsgf/rust-hdrhistogram.svg?branch=master)](https://travis-ci.org/jsgf/rust-hdrhistogram)
 
 This is a thin binding to the [HdrHistogram_c](https://github.com/HdrHistogram/HdrHistogram_c)
@@ -26,7 +28,7 @@ This is on crates.io, so using it is just a matter of adding this to your Cargo.
 
 ```
 [dependencies]
-hdrhistogram = "*"
+hdrhistogram = "0.1"
 ```
 
 The API is not at all stable right now.

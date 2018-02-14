@@ -12,7 +12,7 @@
 //! precision. It then records one count each of 1 and 10, and 40 counts of 100.
 //!
 //! ```
-//! # use hdrhistogram::Histogram;
+//! # use hdrhistogram_c::Histogram;
 //! let mut h = Histogram::init(1, 1000000, 2).unwrap();
 //! 
 //! h.record_value(1);
