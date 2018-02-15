@@ -1,7 +1,8 @@
 Rust binding to HdrHistogram_c library
 ======================================
 
-NOTE: This crate is no longer actively maintained, and is intended for backwards compatibility. New users should use the pure Rust "hdrhistogram" crate.
+# NOTE
+This crate is no longer actively maintained, and is only intended for backwards compatibility. New users should use the pure Rust [hdrsample](https://crates.io/crates/hdrsample) crate.
 
 [![Build Status](https://travis-ci.org/jsgf/rust-hdrhistogram.svg?branch=master)](https://travis-ci.org/jsgf/rust-hdrhistogram)
 
