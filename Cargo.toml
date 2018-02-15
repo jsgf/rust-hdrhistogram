@@ -1,17 +1,19 @@
 [package]
 name = "hdrhistogram-c"
-version = "0.1.14"
+version = "0.1.17"
 readme = "README.md"
 authors = ["Jeremy Fitzhardinge <jeremy@goop.org>"]
 description = "Binding to HdrHistogram_c library"
 repository = "https://github.com/jsgf/rust-hdrhistogram"
-documentation = "https://jsgf.github.io/rust-hdrhistogram/doc/hdrhistogram/index.html"
+documentation = "https://docs.rs/hdrhistogram-c"
 keywords = [ "ffi", "binding", "hdrhistogram", "histogram" ]
 license = "MIT"
 build = "build.rs"
 exclude = [ "ccache/**" ]
+
+[badges]
 maintenance = { status = "passively-maintained" }
-travis-ci = { repository = "https://github.com/jsgf/rust-hdrhistogram" }
+travis-ci = { repository = "jsgf/rust-hdrhistogram" }
 
 [dependencies]
 libc = "0.2.6"
