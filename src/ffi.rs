@@ -1,6 +1,6 @@
 extern crate libc;
 
-use self::libc::{int64_t, int32_t, c_double, c_int, c_void, c_char, size_t};
+use self::libc::{c_double, c_int, c_void, c_char, size_t};
 use std::str;
 use std::ffi::CStr;
 use std::marker::PhantomData;
@@ -11,6 +11,9 @@ use std::ptr;
 use std::result;
 
 pub use super::Result;
+
+type int64_t = i64;
+type int32_t = i32;
 
 #[cfg(test)]
 pub mod test;
